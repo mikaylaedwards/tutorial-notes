@@ -1,0 +1,77 @@
+---
+title: "Missing Data"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r include=FALSE}
+library(naniar)
+library(tidyverse)
+
+```
+
+# Dealing with Missing Data 
+
+Useful summary function from package 'naniar'
+```{r}
+miss_var_summary(airquality)
+```
+
+
+Replacing unusual values with missing values (NA) using mutate & ifelse
+Replaces Ozone value <15 with NA
+```{r}
+head(airquality)
+
+airquality2 <- airquality %>% 
+  mutate(Ozone = ifelse(Ozone < 15, NA, Ozone))
+
+head(airquality2)
+```
+
+##Count & Replace Strange Missing Values
+Count missing values for -99, "N/A" and "n/a"
+```{r}
+#define messy dataframe
+messy <- tibble::tribble(~x,  ~y,    ~z,
+                          1,   "A",   -100,
+                          3,   "N/A", -99,
+                          NA,  NA,    -98,
+                          -99, "E",   -101,
+                          "n/a", "F",   -1)
+
+ #count missing (in list) for each variable
+miss_scan_count(messy,list(-99,"N/A","n/a"))
+```
+
+We can replace these inconsistent values with NA 
+```{r}
+messy %>% replace_with_na_at(
+                   .vars = c("x","y","z"), 
+                   ~.x %in% list(-99,"N/A","n/a"))
+
+```
+
+##Implicit missing values
+Some missing values can be "hidden": rows that should be there are missing altogether
+```{r}
+hidden <- tibble::tribble(~player,~time,~score,
+                          "jesse","morning",15,
+                          "jesse",  "afternoon", 20,
+                          "jesse","evening", 30,
+                          "andy", " morning", 4,
+                          "andy",  "afternoon", 100,
+                          "nic",  "afternoon", 92)
+
+
+# Use `complete()` on the `time` variable to make implicit missing values explicit
+#adds NA for implicit missing
+hidden %>% complete(player,time)
+```
+For the time variable we can see that there should be an entry for morning, afternoon, and evening for each player. However, we do not have complete information for andy (missing evening) or nic (missing morn/eve). We can replace these hidden missing values using complete()
+
+More useful information about 'naniar' [here] (https://www.njtierney.com/post/2018/06/12/naniar-on-cran/)
+
